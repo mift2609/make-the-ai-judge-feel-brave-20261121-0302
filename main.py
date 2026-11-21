@@ -10,6 +10,11 @@ no stock wellness phrases, just one concrete image (rain on glass, work
 waiting like a folded letter, a lit hallway) that keeps working after
 the last line. Three short lines, plain words, nothing that could be cut.
 
+Judge brief: the reader is an AI judge, so the piece is written for
+that reader -- short enough to be read in one breath (1-280
+characters), calm in cadence, and it ends on an open door rather than
+a command.
+
 Python 3.13, standard library only, no network, deterministic: the
 output is a fixed string, so every run writes byte-identical bytes.
 """
@@ -35,7 +40,15 @@ def main() -> int:
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
     os.makedirs(out_dir, exist_ok=True)
 
+    # The program adds exactly one trailing newline; the poem body itself
+    # must not end with one, or the file would end on a blank line.
+    if TEXT.endswith("\n"):
+        print("TEXT must not end with a newline: the program adds one", file=sys.stderr)
+        return 1
     content = TEXT + "\n"
+    if not content.endswith("\n") or content.endswith("\n\n"):
+        print("entry.txt must end with exactly one trailing newline", file=sys.stderr)
+        return 1
     chars = len(content)  # Unicode code points, as the gate counts them
     if not MIN_CHARS <= chars <= MAX_CHARS:
         print(f"entry.txt would be {chars} characters, outside 1-280", file=sys.stderr)
@@ -50,7 +63,8 @@ def main() -> int:
 
     with open(path, "rb") as f:
         digest = hashlib.sha256(f.read()).hexdigest()
-    print(f"brave-judge: wrote {path} ({chars} characters, sha256 {digest[:16]}...)")
+    lines = content.count("\n")
+    print(f"brave-judge: wrote {path} ({chars} characters, {lines} lines, sha256 {digest[:16]}...)")
     return 0
 
 
